@@ -1,0 +1,7 @@
+{
+  "example_of": "FedAvg LoRA AraBERTv02 auth natural_balanced seed42",
+  "best_val_macro_f1": 0.7477181331857591,
+  "test_macro_f1": 0.7346014084718531,
+  "test_accuracy": 0.7894736842105263,
+  "note": "Illustrative snippet from paper revision runs; re-run for exact reproduction."
+}

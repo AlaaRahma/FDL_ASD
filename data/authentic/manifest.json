@@ -1,0 +1,13 @@
+{
+ "name": "FDL-ASD authentic splits",
+ "n_train": 18548,
+ "n_validation": 2318,
+ "n_test": 2318,
+ "n_synthetic_in_train": 0,
+ "note": "Authentic only. Optional SADA add-on: data/sada/sada.csv (4229).",
+ "sha256": {
+  "train.csv": "3833fdeb4abcaee0842c96e5dc285ad0bf71f826ff8ab9ccd404cb6fa754ce32",
+  "validation.csv": "de310da67bb63f57b71ea9b76108eee99f75aa7ff8a4819e49563c3bc53254f3",
+  "test.csv": "000a500e1886e6a0128e9ed0e75fdd26ff4d76d89a35f7fd7214dd6a0b15ac29"
+ }
+}

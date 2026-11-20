@@ -1,0 +1,16 @@
+# Validated on Python 3.10 (CPU). CUDA / bitsandbytes are environment-specific.
+torch>=2.1.0
+transformers>=4.46.0
+peft>=0.18.0
+accelerate>=0.30.0
+numpy>=1.24
+pandas>=2.0
+scikit-learn>=1.3
+scipy>=1.10
+tokenizers>=0.20
+huggingface-hub>=0.20
+safetensors>=0.4
+tqdm>=4.66
+matplotlib>=3.8
+# Optional for QLoRA:
+# bitsandbytes>=0.43

@@ -1,0 +1,15 @@
+# Default hyper-parameters (unified_v2 / thesis). scripts/run.py also embeds these via flasd.common.HP.
+model: MARBERTv2
+mode: lora
+data: auth   # auth | sada | ros
+lr:
+  full: 1.0e-5
+  lora: 2.0e-5
+  qlora: 2.0e-5
+batch_size: 64
+max_length: 64
+epochs: 50
+patience: 10
+lora_r: 16
+lora_alpha: 32
+synthetic_scale: 0.3   # when using --data sada / --p2
