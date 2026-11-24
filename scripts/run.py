@@ -12,18 +12,9 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-import torch
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'src'))
 from flasd.common import HP, SADA_TEACHER, SEEDS, atomic_json, seed_everything  # noqa: E402
-from flasd import data as D  # noqa: E402
-from flasd.train import Encoded, lr_factor, train_steps  # noqa: E402
-from flasd.eval import metrics, predict  # noqa: E402
-from flasd.models import build, count_params, get_state, set_state, tokenizer_for, trainable_names  # noqa: E402
-from flasd.privacy import mia_scores  # noqa: E402
 
 
 def parse(argv=None):
@@ -75,8 +66,31 @@ def parse(argv=None):
     return p.parse_args(argv)
 
 
+def _require_runtime():
+    """Import the training stack after argparse so ``--help`` works without torch."""
+    g = globals()
+    if g.get('torch') is not None:
+        return
+    import numpy as np
+    import pandas as pd
+    import torch
+    from flasd import data as D
+    from flasd.train import Encoded, train_steps
+    from flasd.eval import metrics, predict
+    from flasd.models import build, count_params, get_state, set_state, tokenizer_for, trainable_names
+    from flasd.privacy import mia_scores
+    g.update(
+        np=np, pd=pd, torch=torch, D=D, Encoded=Encoded, train_steps=train_steps,
+        metrics=metrics, predict=predict, build=build, count_params=count_params,
+        get_state=get_state, set_state=set_state, tokenizer_for=tokenizer_for,
+        trainable_names=trainable_names, mia_scores=mia_scores,
+    )
+
+
 def main(argv=None):
-    args = parse(argv)
+    args = parse(argv)  # exits on --help before torch is required
+    _require_runtime()
+
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     if (out / 'done.json').exists():
@@ -147,7 +161,7 @@ def main(argv=None):
             'FL/central P2 approximation in fl-asd-paper: source tag on all texts; [SYN] on synthetic train only; '
             'soft labels from data/sada/sada_teacher_pens.csv; synthetic_scale=0.3; '
             'FL curriculum approx = auth-first rounds then full mix (not the centralised two-stage utag→synben curriculum). '
-            'Centralised full-curriculum P2 results are reused from dataset_benchmark/sadac (and arsfix D1.5-w0.3).'
+            'Centralised full-curriculum P2 results reuse the paper SADA (D1.5-w0.3) training mix.'
         )
     atomic_json(cfg, out / 'config.json')
     log(f'{args.setting} {args.model} {args.mode} data={args.data} tag={args.tag} syn={args.syn_marker} '

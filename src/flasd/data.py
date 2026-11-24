@@ -307,7 +307,7 @@ def allocate_synthetic(train, parts, seed):
     for i in syn:
         w = counts.get(groups[i])
         if w is None or w.sum() == 0:
-            continue  # no client holds sarcastic seeds of this group (cannot occur for SADA-final)
+            continue  # no client holds sarcastic seeds of this group (should not occur for SADA)
         extra[rng.choice(len(parts), p=w / w.sum())].append(i)
     return [np.concatenate([p, np.array(e, dtype=int)]) for p, e in zip(parts, extra)]
 

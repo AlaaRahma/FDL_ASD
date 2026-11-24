@@ -1,25 +1,66 @@
 # SADA
 
-> In-repo SADA slice for FDL-ASD. Preferred file: `sada.csv` (4,229 rows). Full package also under `paper_new/SADA/`.
+**Remote (full package):** [https://github.com/AlaaRahma/SADA_Generation](https://github.com/AlaaRahma/SADA_Generation)  
+**FDL-ASD code:** [https://github.com/AlaaRahma/FDL_ASD](https://github.com/AlaaRahma/FDL_ASD)
+
+> In-repo **SADA** slice for FDL-ASD. Preferred file: `sada.csv` (**4,229** rows). Full package (with `splits/` and the same figures) also at [SADA_Generation](https://github.com/AlaaRahma/SADA_Generation) or under `paper_new/SADA/`.
 
 Training-only synthetic sarcastic Arabic tweets used in the FDL-ASD paper.
 
 **SADA** = Stratified, Anchored, Diverse Augmentation. This release is the paper cut of **4,229** synthetic sarcastic tweets derived from authentic **training** seeds only. Validation and test stay authentic.
 
-Frozen 2026-11-08 from the refinement set `D1.5-w0.3` (see `data/manifest.json`). Internal build label was sometimes written “SADA-final-C”; the public name is **SADA**.
+Frozen 2026-11-08 from the refinement set `D1.5-w0.3` (see `manifest.json`). The public name is **SADA**.
 
 ---
 
-## Quick layout
+## Architecture
+
+**SADA** builds synthetic sarcastic Arabic training tweets in five steps: (1) **profile** authentic training data by source, dialect, length, and sarcasm cues; (2) **generate** new tweets with few-shot prompts on ALLaM-7B; (3) **check and select** with format, novelty, safety, verifier-vote, and diversity filters; (4) **curriculum-train** on real + selected synthetic, then real-only fine-tune; (5) **evaluate** only on unchanged real validation and test.
+
+![SADA pipeline architecture](../../docs/figures/sada_architecture.png)
+
+*(File: `docs/figures/sada_architecture.png` — mirrored from the standalone SADA package.)*
+
+---
+
+## Setup and reproduce
+
+From the **FDL-ASD** repo root (one level above this folder):
+
+```bash
+cd /path/to/FDL-ASD
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
+
+# Checksums for the three SADA CSVs in this directory
+(cd data/sada && sha256sum -c CHECKSUMS.sha256)
+
+# Loads authentic 18,548 + SADA 4,229; expects SMOKE OK
+python scripts/smoke_check.py
+```
+
+| Goal | Path (from FDL-ASD root) |
+|---|---|
+| SADA add-on | `data/sada/sada.csv` (**4,229**) |
+| Soft labels / tagged curriculum | `data/sada/sada_teacher_pens.csv`, `data/sada/sada_train_tagged.csv` |
+| Authentic splits | `data/authentic/{train,validation,test}.csv` (**18,548 / 2,318 / 2,318**) |
+| Paper figures | `docs/figures/sada_architecture.png`, `sada_tsne_mix.png`, `fig2_*.png`, … |
+
+Train with SADA via the CLI (`--data sada`); see the repo root `README.md`. Full standalone package layout (including ready-made `splits/train.csv`) is documented in `paper_new/SADA/README.md`.
+
+---
+
+## Quick layout (this folder)
 
 | Path | What it is |
 |---|---|
-| `data/sada.csv` | **4,229** synthetic sarcastic rows (release columns) |
-| `data/sada_train_tagged.csv` | Same rows with `[SYN]` + source tags for curriculum training |
-| `data/sada_teacher_pens.csv` | Soft teacher targets from verifier ensemble |
-| `splits/train.csv` | Paper training mix: 18,548 authentic + 4,229 SADA (**22,777**) |
-| `splits/validation.csv`, `splits/test.csv` | Authentic only (**2,318** each) |
-| `docs/figures/` | t-SNE / neighbour-mixing and validation plots |
+| `sada.csv` | **4,229** synthetic sarcastic rows (release columns) |
+| `sada_train_tagged.csv` | Same rows with `[SYN]` + source tags for curriculum training |
+| `sada_teacher_pens.csv` | Soft teacher targets from verifier ensemble |
+| `CHECKSUMS.sha256` / `manifest.json` | Integrity + provenance |
+
+Authentic val/test and the auth+SADA train mix live under `../authentic/` in this repo, or under `splits/` in the full **SADA** package.
 
 ---
 
@@ -39,7 +80,7 @@ Percentages in parentheses are the **sarcastic share** within that cell.
 | **All authentic** | **18,548 (30.0%)** | **2,318 (29.9%)** | **2,318 (29.9%)** | — |
 | **+ SADA** | **22,777 (43.0%)** | 2,318 | 2,318 | **4,229** |
 
-### Class balance (from `splits/`)
+### Class balance
 
 | Split | Non-sarcastic | Sarcastic | Total | Notes |
 |---|---:|---:|---:|---|
@@ -102,7 +143,7 @@ LaBSE t-SNE of ArSarcasm-v2 and iSarcasmEval authentic training tweets against t
 
 ![SADA t-SNE grid and neighbour-mixing bars](../../docs/figures/sada_tsne_mix.png)
 
-*(File: `docs/figures/sada_tsne_mix.png` — same asset as `fl-asd-paper/figures/sada_tsne_mix.png` / `fig1_tsne_grid.png`.)*
+*(File: `docs/figures/sada_tsne_mix.png` — same asset as `fig1_tsne_grid.png`.)*
 
 ---
 
@@ -136,21 +177,29 @@ Share of authentic neighbours among the k nearest neighbours in embedding space 
 
 ---
 
-## How to use it
+## How to use it (short)
 
-1. Keep **validation** and **test** authentic (`splits/validation.csv`, `splits/test.csv`).
-2. For the paper recipe, train on `splits/train.csv` (already auth + SADA), or start from authentic train and append `data/sada.csv`.
+1. Keep **validation** and **test** authentic (`data/authentic/validation.csv`, `test.csv`).
+2. Append `sada.csv` to authentic train, or use `--data sada` in FDL-ASD.
 3. Prefer soft labels + down-weighted synthetic loss (paper: λ_syn = 0.3) and an authentic-first curriculum with the tagged file.
 4. Do **not** use SADA rows as evaluation data.
-
-Checksums: `data/CHECKSUMS.sha256`. Provenance detail: `data/manifest.json`.
-
-In the FDL-ASD code repo the same files live at `data/sada/sada.csv` (and companions).
 
 ---
 
 ## What this is not
 
-- Not a redistributed copy of the public ArSarcasm-v2 / iSarcasmEval / headline corpora (those stay in the authentic split files you already hold).
+- Not a redistributed copy of the public ArSarcasm-v2 / iSarcasmEval / headline corpora.
 - Not human re-annotated synthetic labels — verifiers confirm sarcasm probability; that remains a limitation.
-- Not the larger intermediate pool (7,390) or the older SADA-ArSarc release under `release/SADA-ArSarc` (historical / ablation sets).
+- Not the larger intermediate pool (7,390) or older historical archive releases.
+
+---
+
+## Paper
+
+SADA is the training-only synthetic dataset introduced in:
+
+> Alaa Rahma, Ammar Mohammed, Wael Issa, and Shahira Shaaban Azab.  
+> **FDL-ASD: Leveraging Federated Deep Learning for Arabic Sarcasm Detection.**  
+> *SN Computer Science* (Springer) — **under review**.
+
+Full package: [SADA_Generation](https://github.com/AlaaRahma/SADA_Generation). Training code: [FDL_ASD](https://github.com/AlaaRahma/FDL_ASD). Please cite the paper if you use this release.

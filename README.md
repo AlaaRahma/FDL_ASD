@@ -1,6 +1,22 @@
 # FDL-ASD
 
+**Remote:** [https://github.com/AlaaRahma/FDL_ASD](https://github.com/AlaaRahma/FDL_ASD)  
+**SADA data:** [https://github.com/AlaaRahma/SADA_Generation](https://github.com/AlaaRahma/SADA_Generation)
+
 Federated deep learning for **Arabic sarcasm detection**. This repo is the reproducible code companion to the FDL-ASD paper: authentic Arabic sarcasm splits, optional **SADA** synthetic training add-on, and modular central / federated training.
+
+## Models (Hugging Face / GitHub)
+
+Identifiers match `src/flasd/common.py` and the paper’s SADA/encoder table:
+
+| Role | Model | Hugging Face | GitHub |
+|---|---|---|---|
+| FL / gate encoder | MARBERTv2 | https://huggingface.co/UBC-NLP/MARBERTv2 | https://github.com/UBC-NLP/marbert |
+| FL / gate encoder | ARBERTv2 | https://huggingface.co/UBC-NLP/ARBERTv2 | https://github.com/UBC-NLP/marbert |
+| FL / gate encoder | AraBERTv02 | https://huggingface.co/aubmindlab/bert-base-arabertv02 | https://github.com/aub-mind/arabert |
+| SADA generator / teachers | ALLaM-7B-Instruct-preview | https://huggingface.co/humain-ai/ALLaM-7B-Instruct-preview | — |
+| Second verification | Fanar-1-9B-Instruct | https://huggingface.co/QCRI/Fanar-1-9B-Instruct | — |
+| Semantic diversity | LaBSE | https://huggingface.co/sentence-transformers/LaBSE | https://github.com/facebookresearch/LaBSE |
 
 ## Overview
 
@@ -47,12 +63,13 @@ pip install -r requirements.txt
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 ```
 
-GPU is optional for smoke checks; LoRA / full fine-tuning wants a CUDA GPU. QLoRA needs `bitsandbytes`.
+GPU is optional for the data smoke check; LoRA / full fine-tuning wants a CUDA GPU. QLoRA needs `bitsandbytes`.
 
 Quick integrity check (no training):
 
 ```bash
-python scripts/smoke_check.py
+python scripts/smoke_check.py --quick   # row counts + CLI --help (no torch needed)
+python scripts/smoke_check.py           # also imports torch / models / FL modules
 ```
 
 ## Data protocol (matches the paper)
@@ -103,7 +120,7 @@ A few paper-side plots live under `docs/figures/` for orientation:
 
 ![Aggregator comparison](docs/figures/aggregator_bars.png)
 
-![Federated vs centralised](docs/figures/ablation_a_federated_vs_centralised.png)
+![Aggregator heatmap (Macro-F1 by model × method)](docs/figures/aggregator_heatmap.png)
 
 ![Confusion (key setting)](docs/figures/confusion_key.png)
 
@@ -124,6 +141,12 @@ SADA embedding / fidelity checks (same assets as the SADA package):
 | `flasd.classic` | TF-IDF SVM / LR / CNB (+ BiLSTM) |
 | `flasd.privacy` / `stats` | MIA helpers, paired bootstrap |
 
-## Citation
+## Paper
 
-If you use the code or SADA, please cite the FDL-ASD paper. Dataset details and distribution tables are also in the companion **SADA** package (`paper_new/SADA` or this repo’s `data/sada/`).
+This repo is the code companion to:
+
+> Alaa Rahma, Ammar Mohammed, Wael Issa, and Shahira Shaaban Azab.  
+> **FDL-ASD: Leveraging Federated Deep Learning for Arabic Sarcasm Detection.**  
+> *SN Computer Science* (Springer) — **under review**.
+
+The optional synthetic training set (**SADA**, 4,229 sarcastic tweets) and generation artefacts are released separately as [SADA_Generation](https://github.com/AlaaRahma/SADA_Generation). A local mirror of the CSVs also lives under `data/sada/` in this repo. If you use the code or SADA, please cite the paper above.

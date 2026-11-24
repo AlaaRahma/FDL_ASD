@@ -23,12 +23,12 @@
  },
  "text_differs_from_orthomatched": 3238,
  "derived_from": {
-  "file": "/home/wael/fdsdl/dataset_benchmark/arsfix/iter/D1.5-w0.3.csv",
+  "file": "D1.5-w0.3.csv",
   "sha256": "845464f93e1a35c1aab895b7f5a455998dc4d0523b653c918b9f032b9295c49f",
-  "teacher": "/home/wael/fdsdl/dataset_benchmark/arsfix/iter/D1.5-w0.3_teacher_pens.csv",
+  "teacher": "D1.5-w0.3_teacher_pens.csv",
   "teacher_sha256": "76e3222de492ebf869170ee40a1176848f193dc337f3f620b8bbb1311002916e",
-  "step3": "/home/wael/fdsdl/dataset_benchmark/sada_final_r/data/step3_scored.csv",
-  "sada_final_train": "/home/wael/fdsdl/dataset_sada_final_final_v41clean/balanced/train.csv",
+  "step3": "step3_scored.csv",
+  "sada_final_train": "SADA_balanced_train.csv",
   "sada_final_train_sha256": "3b10e3a6b5f4f5a7ef39160a318e98e5202f21a770f558fe3404b1fa20cc7d47"
  },
  "p1_train": {

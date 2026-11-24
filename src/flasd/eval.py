@@ -4,7 +4,6 @@ Validation/test selection rule used everywhere: pick the checkpoint by authentic
 validation macro-F1 only; score the authentic test split once with that checkpoint.
 """
 import numpy as np
-import torch
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -18,25 +17,27 @@ from .common import HP
 
 
 def amp_ctx(mode):
+    import torch
     if mode == 'qlora' or not torch.cuda.is_available():
         return torch.autocast('cpu', enabled=False)
     return torch.autocast('cuda', dtype=torch.float16)
 
 
-@torch.no_grad()
 def predict(model, data, mode, device, index=None, batch_size=256):
+    import torch
     model.eval()
     index = np.arange(len(data.y)) if index is None else np.asarray(index)
     order = index[np.argsort([len(data.ids[i]) for i in index], kind='stable')]
     probs = np.zeros((len(index), 2), dtype=np.float64)
     pos = {i: k for k, i in enumerate(index)}
-    for chunk in [order[i:i + batch_size] for i in range(0, len(order), batch_size)]:
-        ids, mask, _ = data.batch(chunk, device)
-        with amp_ctx(mode):
-            logits = model(input_ids=ids, attention_mask=mask).logits.float()
-        p = torch.softmax(logits, -1).cpu().numpy()
-        for r, i in enumerate(chunk):
-            probs[pos[i]] = p[r]
+    with torch.no_grad():
+        for chunk in [order[i:i + batch_size] for i in range(0, len(order), batch_size)]:
+            ids, mask, _ = data.batch(chunk, device)
+            with amp_ctx(mode):
+                logits = model(input_ids=ids, attention_mask=mask).logits.float()
+            p = torch.softmax(logits, -1).cpu().numpy()
+            for r, i in enumerate(chunk):
+                probs[pos[i]] = p[r]
     return probs
 
 

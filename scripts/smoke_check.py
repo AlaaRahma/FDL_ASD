@@ -39,19 +39,26 @@ def main():
     assert int((sada.origin == 'synthetic').sum()) == 4229
     assert len(sadac) == len(sada)
 
+    # metrics() is numpy/sklearn-only (torch is lazy-imported for predict)
     from flasd.eval import metrics
     import numpy as np
     m = metrics(np.array([0, 1, 0, 1]), np.array([[0.9, 0.1], [0.2, 0.8], [0.7, 0.3], [0.4, 0.6]]))
     assert 'macro_f1' in m
+    print('metrics ok')
 
     if not a.quick:
-        import flasd.models  # noqa: F401
-        import flasd.train  # noqa: F401
-        import flasd.fl  # noqa: F401
-        import flasd.classic  # noqa: F401
-        import flasd.privacy  # noqa: F401
-        import flasd.stats  # noqa: F401
-        print('module imports ok')
+        try:
+            import torch  # noqa: F401
+        except ImportError:
+            errors.append('torch not installed (needed for full smoke; retry with --quick or pip install -r requirements.txt)')
+        else:
+            import flasd.models  # noqa: F401
+            import flasd.train  # noqa: F401
+            import flasd.fl  # noqa: F401
+            import flasd.classic  # noqa: F401
+            import flasd.privacy  # noqa: F401
+            import flasd.stats  # noqa: F401
+            print('module imports ok')
 
     # CLI help
     import subprocess

@@ -13,8 +13,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch
-import torch.nn as nn
 from scipy.sparse import hstack
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -24,6 +22,14 @@ from sklearn.svm import LinearSVC
 from . import data as D
 from .common import RUNS, atomic_json, seed_everything
 from .eval import metrics
+
+# torch is only required for BiLSTM (and ``--help`` must work without it)
+try:
+    import torch
+    import torch.nn as nn
+except ImportError:  # pragma: no cover
+    torch = None
+    nn = None
 
 
 def prob_from_score(s):
@@ -50,23 +56,30 @@ def tfidf_models(Xtr, ytr, Xva, yva, Xte, kind):
     return best
 
 
-class BiLSTM(nn.Module):
-    def __init__(self, vocab, emb=300, hid=128):
-        super().__init__()
-        self.emb = nn.Embedding(vocab, emb, padding_idx=0)
-        self.lstm = nn.LSTM(emb, hid, num_layers=2, batch_first=True, bidirectional=True, dropout=0.3)
-        self.drop = nn.Dropout(0.5)
-        self.out = nn.Linear(4 * hid, 2)
+def _bilstm_cls():
+    if torch is None or nn is None:
+        raise ImportError('torch is required for BiLSTM baselines; pip install -r requirements.txt')
 
-    def forward(self, x):
-        h, _ = self.lstm(self.emb(x))
-        m = (x > 0).unsqueeze(-1).float()
-        mean = (h * m).sum(1) / m.sum(1).clamp(min=1)
-        mx = (h - 1e4 * (1 - m)).max(1).values
-        return self.out(self.drop(torch.cat([mean, mx], -1)))
+    class BiLSTM(nn.Module):
+        def __init__(self, vocab, emb=300, hid=128):
+            super().__init__()
+            self.emb = nn.Embedding(vocab, emb, padding_idx=0)
+            self.lstm = nn.LSTM(emb, hid, num_layers=2, batch_first=True, bidirectional=True, dropout=0.3)
+            self.drop = nn.Dropout(0.5)
+            self.out = nn.Linear(4 * hid, 2)
+
+        def forward(self, x):
+            h, _ = self.lstm(self.emb(x))
+            m = (x > 0).unsqueeze(-1).float()
+            mean = (h * m).sum(1) / m.sum(1).clamp(min=1)
+            mx = (h - 1e4 * (1 - m)).max(1).values
+            return self.out(self.drop(torch.cat([mean, mx], -1)))
+
+    return BiLSTM
 
 
 def bilstm(tr_t, ytr, va_t, yva, te_t, seed, epochs=20, patience=4):
+    BiLSTM = _bilstm_cls()
     seed_everything(seed)
     from collections import Counter
     cnt = Counter(w for t in tr_t for w in t.split())
@@ -110,7 +123,10 @@ def main():
     ap.add_argument('--methods', default='svm,lr,cnb,bilstm')
     ap.add_argument('--seeds', default='42,43,44')
     a = ap.parse_args()
-    torch.set_num_threads(8)
+    if torch is not None:
+        torch.set_num_threads(8)
+    elif 'bilstm' in a.methods.split(','):
+        raise ImportError('torch is required for BiLSTM; omit it from --methods or pip install torch')
     train, val, test = D.load_splits(a.data)
     tr_t, va_t, te_t = D.model_text(train), D.model_text(val), D.model_text(test)
     ytr, yva, yte = train.sarcasm.values, val.sarcasm.values, test.sarcasm.values
